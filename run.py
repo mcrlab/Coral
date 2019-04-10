@@ -6,7 +6,7 @@ import time
 def main():
     print("[INFO] warming up camera...")
     vs = VideoStream().start()
-    time.sleep(2)
+    time.sleep(0.5)
 
     app = App(vs)
     app.root.mainloop()
