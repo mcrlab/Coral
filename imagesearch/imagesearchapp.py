@@ -46,6 +46,7 @@ class App:
 
         self.stopEvent = threading.Event()
         self.thread = threading.Thread(target=self.videoLoop, args=())
+        self.thread.daemon = True
         self.thread.start()
         
     def findObjects(self, image):
@@ -104,16 +105,22 @@ class App:
                 else:
                     self.panel.configure(image=image)
                     self.panel.image = image
-                        
+                    
+            print("[INFO] closing...")
+            self.camera.release()
+            self.root.destroy()
+            return -1
+        
         except Exception as e:
             print("[INFO] caught a RuntimeError")
             print(e)
         finally:
+            print("[INFO] closing...")
             self.camera.release()
             self.root.destroy()
+            return -1
 
 
     def onClose(self):
-        print("[INFO] closing...")
         self.stopEvent.set()
 
