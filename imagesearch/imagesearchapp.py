@@ -20,6 +20,11 @@ def ReadLabelFile(file_path):
     ret[int(pair[0])] = pair[1].strip()
   return ret
 
+def calculatePosition(position):
+    x = int(position[0]*WIDTH)
+    y  = int(position[1]*HEIGHT)
+    return (x, y)
+
 class App:
     def __init__(self):
 
@@ -60,25 +65,28 @@ class App:
                 self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
                 input = cv2.resize(self.frame, (width, height))
                 input = input.reshape((width * height * channels))
-                ans = self.engine.DetectWithInputTensor(input, threshold=0.05)
+                ans = self.engine.DetectWithInputTensor(input, top_k=5)
                 if ans:
                     for obj in ans:
-                        if(obj.score > 0.1):
-                            box = obj.bounding_box.flatten().tolist()
-            
-                            cv2.rectangle(self.frame, (int(WIDTH * box[0]), int(HEIGHT * box[1])), (int(WIDTH * box[2]), int(HEIGHT * box[3])), (0, 255, 0), 2)
+                        if(obj.score > 0.5):
+
+                            top_left = calculatePosition(obj.bounding_box[0])
+                            bottom_right = calculatePosition(obj.bounding_box[1])
+                            center_point = (int(top_left[0] + ((bottom_right[0] - top_left[0]) / 2)),
+                                            int(top_left[1] + ((bottom_right[1] - top_left[1]) / 2)))
+#                            cv2.rectangle(self.frame, (top_left[0], top_left[1]), (bottom_right[0], bottom_right[1]), (0, 255, 0), 2)
                 
                             label = self.labels[obj.label_id]
                             label_size = cv2.getTextSize(label, font, 0.5,cv2.LINE_AA)
                             label_width = label_size[0][0]
                             label_height = label_size[0][1]
-                            cv2.rectangle(self.frame, (int(WIDTH * box[0])-1, int(HEIGHT * box[1])-label_height), (int(WIDTH * box[0])+label_width, int(HEIGHT * box[1])), (0,255,0),-1)
                             
-                            
-                            cv2.putText(self.frame, label, (int(WIDTH * box[0])+5, int(HEIGHT * box[1])-5), font, 0.5, (255,255,255),1,cv2.LINE_AA)
+                            cv2.circle(self.frame, center_point, 5, (0,255,0),-1)
+                            cv2.line(self.frame, (int(top_left[0] + label_width/2),top_left[1]), center_point, (0,255,0),2)
+                            cv2.rectangle(self.frame, (top_left[0]-1, top_left[1]-label_height), (top_left[0]+label_width, top_left[1]), (0,255,0),-1)
+                            cv2.putText(self.frame, label, (top_left[0]+5, top_left[1]-5), font, 0.5, (255,255,255),1,cv2.LINE_AA)
                 
-                image = Image.fromarray(self.frame)
-                
+                image = Image.fromarray(self.frame)     
                 image = ImageTk.PhotoImage(image)
         
                 if self.panel is None:
